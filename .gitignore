@@ -30,3 +30,7 @@ target/
 
 # Typescript
 dist
+
+# docs build files
+_site
+.jekyll-cache
