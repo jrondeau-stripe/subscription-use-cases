@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="{{ site.lang | default: "en-US" }}">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+
+{% seo %}
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}">
+
+    <meta name="viewport" content="width=device-width">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+      <header class="sticky-header">
+        <a href="{{ page.version | relative_url }}">
+          <img src="{{'/assets/img/stripe-logo.png' | relative_url }}" alt="">
+          <h1>Heptio <span>Ark</span></h1>
+        </a>
+
+        <span class="version-selector">
+            <a href="#">
+              <span>{{page.version}}</span><i class="fa fa-caret-down" aria-hidden="true"></i>
+            </a>
+            <ul>
+            {% for version in site.versions %}
+              {% assign original_version = page.version | prepend: '/' | append: '/' %}
+              {% assign new_version = version | prepend: '/' | append: '/' %}
+              {% if version == site.latest %}
+                {% assign latest_url = page.url | replace: original_version, new_version | relative_url %}
+              {% endif %}
+              <li><a href="{{ page.url | replace: original_version, new_version | relative_url }}">{{ version }}</a></li>
+            {% endfor %}
+          </ul>
+        </span>
+
+        <ul>
+          <li><a href="#"><img src="{{'/assets/img/icon--github.svg' | relative_url }}" alt="github"></a></li>
+          <li><a href="#"><img src="{{'/assets/img/icon--twitter.svg' | relative_url }}" alt="twitter"></a></li>
+          <li><a href="#"><img src="{{'/assets/img/icon--slack.svg' | relative_url }}" alt="slack"></a></li>
+        </ul>
+      </header>
+      <nav>
+        {% include nav.html %}
+      </nav>
+      <section>
+
+      {% if page.version != site.latest %}
+        <div class="version-warning">
+          <p>
+          <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
+          Documentation for version {{ page.version }} is no longer actively maintained.
+          The version you are currently viewing is a static snapshot.
+          For up-to-date documentation, see the <a href="{{latest_url}}">latest version</a>.
+          </p>
+        </div>
+      {% endif %}
+
+      {{ content }}
+
+      </section>
+
+  {% if site.google_analytics %}
+    <script>
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+        ga('create', '{{ site.google_analytics }}', 'auto');
+        ga('send', 'pageview');
+    </script>
+  {% endif %}
+  </body>
+</html>
