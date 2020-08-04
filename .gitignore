@@ -40,5 +40,7 @@ dist
 # React
 build
 
-# docs
+# docs build files
 _site
+.jekyll-cache
+
