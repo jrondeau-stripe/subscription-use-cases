@@ -3,21 +3,20 @@
 This sample shows how to create a customer and subscribe them to a plan with
 [Stripe Billing](https://stripe.com/billing). You can find step by step directions in the billing [overview](https://stripe.com/docs/billing) documentation page.
 
-|     | [fixed-price-subscriptions](./fixed-price-subscriptions) | [usage-based-subscriptions](./usage-based-subscriptions) | |
-:--- | :---: | :---: | :---:
-**Demo**  | See a hosted version of the [sample](https://xt7b9.sse.codesandbox.io/) in test mode or [fork on codesandbox.io](https://codesandbox.io/s/github/stripe-samples/subscription-use-cases/tree/master/fixed-price-subscriptions)  | See a hosted version of the [sample](https://l2sny.sse.codesandbox.io/) in test mode or [fork on codesandbox.io](https://codesandbox.io/s/stripe-sample-usage-based-subscriptions-l2sny) |
-**Define prices in: CLI, Dashboard, or API** Create a price with the Stripe: CLI, Dashboard, or API. | ✅  |  |
-**Charge users a fixed price on a recurring basis** Create a subscription with a fixed price recurring monthly/yearly/etc. | ✅  |  |
-**Charge users per seat on a recurring basis** Create a subscription that charges based on the amount of seats used. |   |  |
-**Charge customers based on their usage.** Create a metered subscriptions so you can charge customers based on their usage. |  | ✅ |  |
+|                                                                                                                             |                                                                                   [fixed-price-subscriptions](./fixed-price-subscriptions)                                                                                    |                                                                 [usage-based-subscriptions](./usage-based-subscriptions)                                                                 |                                                                                     [per-seat-subscriptions](./per-seat-subscriptions)                                                                                     |                                   Checkout ([checkout-subscription-and-add-on](https://github.com/stripe-samples/checkout-subscription-and-add-on))                                   |
+| :-------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+| **Demo**                                                                                                                    | See a hosted version of the [sample](https://xt7b9.sse.codesandbox.io/) in test mode or [fork on codesandbox.io](https://codesandbox.io/s/github/stripe-samples/subscription-use-cases/tree/master/fixed-price-subscriptions) | See a hosted version of the [sample](https://l2sny.sse.codesandbox.io/) in test mode or [fork on codesandbox.io](https://codesandbox.io/s/stripe-sample-usage-based-subscriptions-l2sny) | See a hosted version of the [sample](https://fqizg.sse.codesandbox.io/) in test mode or [fork on codesandbox.io](https://codesandbox.io/s/github/stripe-samples/subscription-use-cases/tree/master/per-seat-subscriptions) | See a hosted version of the [sample](https://508st.sse.codesandbox.io/) in test mode or [fork on codesandbox.io](https://codesandbox.io/s/checkout-subscription-with-add-on-508st) |
+| **Define prices in: CLI, Dashboard, or API** Create a price with the Stripe: CLI, Dashboard, or API.                        |                                                                                                              ✅                                                                                                               |                                                                                            ✅                                                                                            |                                                                                                             ✅                                                                                                             |                                                                                          ✅                                                                                           |
+| **Charge users a fixed price on a recurring basis** Create a subscription with a fixed price recurring monthly/yearly/etc.  |                                                                                                              ✅                                                                                                               |                                                                                                                                                                                          |                                                                                                                                                                                                                            |                                                                                          ✅                                                                                           |
+| **Charge users per seat on a recurring basis.** Create a subscription that charges based on the amount of seats used.       |                                                                                                                                                                                                                               |                                                                                                                                                                                          |                                                                                                             ✅                                                                                                             |                                                                                                                                                                                       |
+| **Charge customers based on their usage.** Create a metered subscriptions so you can charge customers based on their usage. |                                                                                                                                                                                                                               |                                                                                            ✅                                                                                            |                                                                                                                                                                                                                            |                                                                                                                                                                                       |
+| **Apple Pay & Google Pay support**                                                                                          |                                                                                                                                                                                                                               |                                                                                                                                                                                          |                                                                                                                                                                                                                            |                                                                           ✅ Built in, no extra code needed                                                                           |
+| **⤵️ Coupon support for subscriptions**                                                                                     |                                                                                                              ✅                                                                                                               |                                                                                            ✅                                                                                            |                                                                                                             ✅                                                                                                             |                                                                               Does not support coupons                                                                                |
 
 **Demo**
+The hosted demos linked above are running in test mode -- use `4242424242424242` as a test card number with any CVC + future expiration date.
 
-See a hosted version of the [sample](https://xt7b9.sse.codesandbox.io/) in test mode or [fork on codesandbox.io](https://codesandbox.io/s/github/stripe-samples/subscription-use-cases/tree/master/fixed-price-subscriptions)
-
-The hosted demo is running in test mode -- use `4242424242424242` as a test card number with any CVC + future expiration date.
-
-Use the `4000000000003220` test card number to trigger a 3D Secure challenge flow.
+Use the `4000002500003155` test card number to trigger a 3D Secure challenge flow.
 
 Read more about test cards on Stripe at https://stripe.com/docs/testing.
 
@@ -33,7 +32,7 @@ Read more about test cards on Stripe at https://stripe.com/docs/testing.
 
 ## How to run locally
 
-This sample includes [5 server implementations](server/) in our most popular languages. Follow the steps below to run one of the servers locally.
+This sample includes 7 server implementations our most popular languages. Follow the steps below to select the integration type you want and run one of the servers locally.
 
 **1. Clone and configure the sample**
 
@@ -41,7 +40,7 @@ The Stripe CLI is the fastest way to clone and configure a sample to run locally
 
 **Using the Stripe CLI**
 
-If you haven't already installed the CLI, follow the [installation steps](https://github.com/stripe/stripe-cli#installation) in the project README. The CLI is useful for cloning samples and locally testing webhooks and Stripe integrations.
+If you haven't already installed the CLI, follow the [installation steps](https://stripe.com/docs/stripe-cli#install). The CLI is useful for cloning samples and locally testing webhooks and Stripe integrations.
 
 In your terminal shell, run the Stripe CLI command to clone the sample:
 
@@ -76,9 +75,15 @@ STRIPE_SECRET_KEY=<replace-with-your-secret-key>
 
 **2. Create Products and Plans on Stripe**
 
-This sample requires a [Price](https://stripe.com/docs/api/prices) ID to create the subscription. Products and Plans are objects on Stripe that you use to model a subscription.
+This sample requires a [Price](https://stripe.com/docs/api/prices) ID to create the subscription. Products and Prices are objects on Stripe that you use to model a subscription.
 
 You can create Products and Prices [in the Dashboard](https://dashboard.stripe.com/products) or with the [API](https://stripe.com/docs/api/prices/create). Create a Price to run this sample and add it to your `.env`.
+
+See the integration guides for examples of creating Products and Prices for different business models.
+[Fixed Price](https://stripe.com/docs/billing/subscriptions/fixed-price#create-business-model)
+[Usage Based Billing](https://stripe.com/docs/billing/subscriptions/metered#create-business-model)
+[Per Seat Billing](https://stripe.com/docs/billing/subscriptions/per-seat#create-business-model)
+
 
 **3. Follow the server instructions on how to run:**
 
@@ -120,3 +125,5 @@ A: We are always looking for new recipe ideas, please email dev-samples@stripe.c
 
 - [@ctrudeau-stripe](https://twitter.com/trudeaucj)
 - [@suz-stripe](https://twitter.com/noopkat)
+- [@dawn-stripe](https://twitter.com/dawnlambeth)
+- [@cjavilla-stripe](https://twitter.com/cjav_dev)

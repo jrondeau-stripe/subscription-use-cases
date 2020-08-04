@@ -1,0 +1,39 @@
+toc:
+  - title: Introduction
+    subfolderitems:
+      - page: About this repository
+        url: index.html
+      - page: Getting started
+        url: get-started
+      - page: What you'll do
+        url: overview
+  - title: Model your business
+    subfolderitems:
+      - page: Introduction
+        url: model
+      - page: Fixed-price items 
+        url: model-fixed-price
+      - page: Per-seat items
+        url: model-per-seat
+  - title: Build the subscription service
+    subfolderitems:
+      - page: Create the customer object
+        url: customer
+      - page: Collect payment information
+        url: payment
+      - page: Create the subscription object
+        url: subscription
+  - title: Test your integration
+    subfolderitems:
+      - page: Set up webhooks
+        url: webhooks
+      - page: Testing 
+        url: test
+  - title: Add functionality
+    subfolderitems:
+      - page: Customer authentication
+        url: authentication
+      - page: Display subscription details
+        url: details
+      - page: Display payment method
+        url: display-method

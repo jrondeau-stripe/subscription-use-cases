@@ -4,6 +4,47 @@ const { resolve } = require('path');
 const bodyParser = require('body-parser');
 // Replace if using a different env file or config
 require('dotenv').config({ path: './.env' });
+
+if (
+  !process.env.STRIPE_SECRET_KEY ||
+  !process.env.STRIPE_PUBLISHABLE_KEY ||
+  !process.env.BASIC ||
+  !process.env.PREMIUM ||
+  !process.env.STATIC_DIR
+) {
+  console.log(
+    'The .env file is not configured. Follow the instructions in the readme to configure the .env file. https://github.com/stripe-samples/subscription-use-cases'
+  );
+  console.log('');
+  process.env.STRIPE_SECRET_KEY
+    ? ''
+    : console.log('Add STRIPE_SECRET_KEY to your .env file.');
+
+  process.env.STRIPE_PUBLISHABLE_KEY
+    ? ''
+    : console.log('Add STRIPE_PUBLISHABLE_KEY to your .env file.');
+
+  process.env.BASIC
+    ? ''
+    : console.log(
+        'Add BASIC priceID to your .env file. See repo readme for setup instructions.'
+      );
+
+  process.env.STRIPE_SECRET_KEY
+    ? ''
+    : console.log(
+        'Add PREMIUM priceID to your .env file. See repo readme for setup instructions.'
+      );
+
+  process.env.STATIC_DIR
+    ? ''
+    : console.log(
+        'Add STATIC_DIR to your .env file. Check .env.example in the root folder for an example'
+      );
+
+  process.exit();
+}
+
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 app.use(express.static(process.env.STATIC_DIR));
@@ -62,7 +103,7 @@ app.post('/create-subscription', async (req, res) => {
   const subscription = await stripe.subscriptions.create({
     customer: req.body.customerId,
     items: [{ price: process.env[req.body.priceId] }],
-    expand: ['latest_invoice.payment_intent'],
+    expand: ['latest_invoice.payment_intent', 'pending_setup_intent'],
   });
 
   res.send(subscription);
@@ -120,7 +161,7 @@ app.post('/retrieve-upcoming-invoice', async (req, res) => {
 app.post('/cancel-subscription', async (req, res) => {
   // Delete the subscription
   const deletedSubscription = await stripe.subscriptions.del(
-    req.body.subscriptionId,
+    req.body.subscriptionId
   );
   res.send(deletedSubscription);
 });
@@ -182,7 +223,7 @@ app.post(
     // https://stripe.com/docs/billing/webhooks
     // Remove comment to see the various objects sent for this sample
     switch (event.type) {
-      case 'invoice.payment_succeeded':
+      case 'invoice.paid':
         // Used to provision services after the trial has ended.
         // The status of the invoice will show up as paid. Store the status in your
         // database to reference when a user accesses your service to avoid hitting rate limits.

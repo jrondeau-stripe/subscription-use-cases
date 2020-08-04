@@ -15,6 +15,8 @@ let priceInfo = {
   },
 };
 
+var accountInfo = {};
+
 function stripeElements(publishableKey) {
   stripe = Stripe(publishableKey);
 
@@ -72,7 +74,7 @@ function stripeElements(publishableKey) {
   if (paymentForm) {
     paymentForm.addEventListener('submit', function (evt) {
       evt.preventDefault();
-      changeLoadingStatePrices(true);
+      changeLoadingStateprices(true);
 
       // If a previous payment was attempted, get the lastest invoice
       const latestInvoicePaymentIntentStatus = localStorage.getItem(
@@ -97,7 +99,7 @@ function stripeElements(publishableKey) {
 }
 
 function displayError(event) {
-  changeLoadingStatePrices(false);
+  changeLoadingStateprices(false);
   let displayError = document.getElementById('card-element-errors');
   if (event.error) {
     displayError.textContent = event.error.message;
@@ -114,6 +116,10 @@ function createPaymentMethod({ card, isPaymentRetry, invoiceId }) {
 
   let priceId = document.getElementById('priceId').innerHTML.toUpperCase();
 
+  let quantity = parseInt(
+    document.getElementById('subscription-quantity').innerText
+  );
+
   stripe
     .createPaymentMethod({
       type: 'card',
@@ -128,115 +134,171 @@ function createPaymentMethod({ card, isPaymentRetry, invoiceId }) {
       } else {
         if (isPaymentRetry) {
           // Update the payment method and retry invoice payment
-          retryInvoiceWithNewPaymentMethod({
-            customerId: customerId,
-            paymentMethodId: result.paymentMethod.id,
-            invoiceId: invoiceId,
-            priceId: priceId,
-          });
+          retryInvoiceWithNewPaymentMethod(
+            customerId,
+            result.paymentMethod.id,
+            invoiceId,
+            priceId
+          );
         } else {
           // Create the subscription
-          createSubscription({
-            customerId: customerId,
-            paymentMethodId: result.paymentMethod.id,
-            priceId: priceId,
-          });
+          createSubscription(
+            customerId,
+            result.paymentMethod.id,
+            priceId,
+            quantity
+          );
         }
       }
     });
 }
 
-function goToPaymentPage(priceId) {
-  // Show the payment screen
-  document.querySelector('#payment-form').classList.remove('hidden');
+function goToPaymentPage(evt) {
+  button = evt.currentTarget;
 
-  document.getElementById('total-due-now').innerText = getFormattedAmount(
-    priceInfo[priceId].amount
+  const params = new URLSearchParams(document.location.search.substring(1));
+  const customerId = params.get('customerId');
+
+  priceId = button.dataset.plan;
+
+  quantity = document.getElementById('quantity-input-' + priceId).value;
+
+  retrieveUpcomingInvoice(customerId, null, priceId, quantity).then(
+    (response) => {
+      invoice = response.invoice;
+      document.getElementById('total-due-now').innerText = getFormattedAmount(
+        invoice.total
+      );
+
+      // Add the price selected, hidden spans but we might move them to a js hash depending on how we change pulling price info
+      //FIXME: are we still using either of these?
+      document.getElementById('priceId').innerHTML = priceInfo[priceId].name;
+      document.getElementById('subscription-quantity').innerText = quantity;
+
+      description = '';
+      invoice.lines.data.forEach((line) => {
+        description += `${line.description}: ${getFormattedAmount(
+          line.amount
+        )} <br/>`;
+      });
+      document.getElementById('description').innerHTML = description;
+
+      // Show which price the user selected
+      if (priceId === 'premium') {
+        document.querySelector('#submit-premium-button-text').innerText =
+          'Selected';
+        document.querySelector('#submit-basic-button-text').innerText =
+          'Select';
+      } else {
+        document.querySelector('#submit-premium-button-text').innerText =
+          'Select';
+        document.querySelector('#submit-basic-button-text').innerText =
+          'Selected';
+      }
+    }
   );
-
-  // Add the price selected
-  document.getElementById('price-selected').innerHTML =
-    '→ Subscribing to ' +
-    '<span id="priceId" class="font-bold">' +
-    priceInfo[priceId].name +
-    '</span>';
-
-  // Show which price the user selected
-  if (priceId === 'premium') {
-    document.querySelector('#submit-premium-button-text').innerText =
-      'Selected';
-    document.querySelector('#submit-basic-button-text').innerText = 'Select';
-  } else {
-    document.querySelector('#submit-premium-button-text').innerText = 'Select';
-    document.querySelector('#submit-basic-button-text').innerText = 'Selected';
-  }
-
   // Update the border to show which price is selected
   changePriceSelection(priceId);
+
+  // Show the payment screen
+  document.querySelector('#payment-form').classList.remove('hidden');
 }
 
 function changePrice() {
   demoChangePrice();
 }
 
+// newPriceIdSelected is currently a name like 'BASIC' and 'PREMIUM'
 function switchPrices(newPriceIdSelected) {
   const params = new URLSearchParams(document.location.search.substring(1));
-  const currentSubscribedpriceId = params.get('priceId');
-  const customerId = params.get('customerId');
-  const subscriptionId = params.get('subscriptionId');
+  const currentSubscribedpriceId = accountInfo.priceId;
+  const customerId = accountInfo.customerId;
+  const subscriptionId = accountInfo.subscriptionId;
+  const currentQuantity = accountInfo.quantity;
+
+  newQuantity = document.getElementById(
+    'quantity-input-' + newPriceIdSelected.toLowerCase()
+  ).value;
+
+  //update account info to store the new quantity and/or new price to be submitted
+  accountInfo.newQuantity = newQuantity;
+  accountInfo.newPriceId = newPriceIdSelected;
+
   // Update the border to show which price is selected
   changePriceSelection(newPriceIdSelected);
 
-  changeLoadingStatePrices(true);
+  changeLoadingStateprices(true);
 
   // Retrieve the upcoming invoice to display details about
   // the price change
-  retrieveUpcomingInvoice(customerId, subscriptionId, newPriceIdSelected).then(
-    (upcomingInvoice) => {
-      // Change the price details for price upgrade/downgrade
-      // calculate if it's upgrade or downgrade
-      document.getElementById(
-        'current-price-subscribed'
-      ).innerHTML = capitalizeFirstLetter(currentSubscribedpriceId);
+  retrieveUpcomingInvoice(
+    customerId,
+    subscriptionId,
+    newPriceIdSelected,
+    newQuantity
+  ).then((response) => {
+    upcomingInvoice = response.invoice;
+    immediateTotal = response.immediate_total;
+    nextInvoiceTotal = response.next_invoice_sum;
 
-      document.getElementById(
-        'new-price-selected'
-      ).innerText = capitalizeFirstLetter(newPriceIdSelected);
+    var changeSummaryDiv = document.getElementById('change-summary');
 
-      document.getElementById('new-price-price-selected').innerText =
-        '$' + upcomingInvoice.amount_due / 100;
+    var description = '';
 
-      let nextPaymentAttemptDateToDisplay = getDateStringFromUnixTimestamp(
-        upcomingInvoice.next_payment_attempt
-      );
-      document.getElementById(
-        'new-price-start-date'
-      ).innerHTML = nextPaymentAttemptDateToDisplay;
-
-      changeLoadingStatePrices(false);
+    if (parseInt(newQuantity) >= currentQuantity) {
+      description += `You added <b> ${
+        newQuantity - currentQuantity
+      }</b> additional seat(s),`;
+    } else {
+      description += `You removed <b> ${
+        currentQuantity - newQuantity
+      }</b> seat(s)`;
     }
-  );
 
-  if (currentSubscribedpriceId != newPriceIdSelected) {
+    description += ` bringing you to a total of <b> ${newQuantity} </b> seat(s) on the <b>${newPriceIdSelected}</b> plan.<br/>`;
+    document.getElementById('quantity-change').innerHTML = description;
+
+    if (immediateTotal > 0) {
+      document.getElementById(
+        'immediate-total'
+      ).innerHTML = `You will be charged <b> ${getFormattedAmount(
+        immediateTotal
+      )} </b> today.`;
+      document.getElementById(
+        'next-payment'
+      ).innerHTML = `<br/> Your next payment of <b>${getFormattedAmount(
+        nextInvoiceTotal
+      )} </b> will be due <b>${getDateStringFromUnixTimestamp(
+        upcomingInvoice.next_payment_attempt
+      )} </b>`;
+    } else {
+      document.getElementById('immediate-total').innerHTML =
+        `There's nothing due today. <br> You have a credit of <b>${getFormattedAmount(
+          immediateTotal
+        )}</b> that will be applied to ` +
+        `your next invoice of <b>${getFormattedAmount(
+          nextInvoiceTotal
+        )} </b>, due on <b>${getDateStringFromUnixTimestamp(
+          upcomingInvoice.next_payment_attempt
+        )}.`;
+    }
+
+    //changeLoadingStateprices(false);
     document.querySelector('#price-change-form').classList.remove('hidden');
-  } else {
-    document.querySelector('#price-change-form').classList.add('hidden');
-  }
+  });
 }
 
 function confirmPriceChange() {
-  const params = new URLSearchParams(document.location.search.substring(1));
-  const subscriptionId = params.get('subscriptionId');
-  let newPriceId = document.getElementById('new-price-selected').innerHTML;
-
-  updateSubscription(newPriceId.toUpperCase(), subscriptionId).then(
-    (result) => {
-      let searchParams = new URLSearchParams(window.location.search);
-      searchParams.set('priceId', newPriceId.toUpperCase());
-      searchParams.set('priceHasChanged', true);
-      window.location.search = searchParams.toString();
-    }
-  );
+  updateSubscription(
+    accountInfo.newPriceId.toUpperCase(),
+    accountInfo.subscriptionId,
+    accountInfo.newQuantity
+  ).then((result) => {
+    let searchParams = new URLSearchParams(window.location.search);
+    searchParams.set('priceId', accountInfo.newPriceId.toUpperCase());
+    searchParams.set('priceHasChanged', true);
+    window.location.search = searchParams.toString();
+  });
 }
 
 function createCustomer() {
@@ -259,7 +321,7 @@ function createCustomer() {
     });
 }
 
-function handleCustomerActionRequired({
+function handlePaymentThatRequiresCustomerAction({
   subscription,
   invoice,
   priceId,
@@ -295,8 +357,7 @@ function handleCustomerActionRequired({
           if (result.paymentIntent.status === 'succeeded') {
             // There's a risk of the customer closing the window before callback
             // execution. To handle this case, set up a webhook endpoint and
-            // listen to invoice.payment_succeeded. This webhook endpoint
-            // returns an Invoice.
+            // listen to invoice.paid. This webhook endpoint returns an Invoice.
             return {
               priceId: priceId,
               subscription: subscription,
@@ -312,7 +373,7 @@ function handleCustomerActionRequired({
   }
 }
 
-function handlePaymentMethodRequired({
+function handleRequiresPaymentMethod({
   subscription,
   paymentMethodId,
   priceId,
@@ -350,7 +411,7 @@ function onSubscriptionComplete(result) {
   // Get the product by using result.subscription.price.product
 }
 
-function createSubscription({ customerId, paymentMethodId, priceId }) {
+function createSubscription(customerId, paymentMethodId, priceId, quantity) {
   return (
     fetch('/create-subscription', {
       method: 'post',
@@ -361,6 +422,7 @@ function createSubscription({ customerId, paymentMethodId, priceId }) {
         customerId: customerId,
         paymentMethodId: paymentMethodId,
         priceId: priceId,
+        quantity: quantity,
       }),
     })
       .then((response) => {
@@ -388,11 +450,11 @@ function createSubscription({ customerId, paymentMethodId, priceId }) {
       // Some payment methods require a customer to do additional
       // authentication with their financial institution.
       // Eg: 2FA for cards.
-      .then(handleCustomerActionRequired)
+      .then(handlePaymentThatRequiresCustomerAction)
       // If attaching this card to a Customer object succeeds,
       // but attempts to charge the customer fail. You will
       // get a requires_payment_method error.
-      .then(handlePaymentMethodRequired)
+      .then(handleRequiresPaymentMethod)
       // No more actions required. Provision your service for the user.
       .then(onSubscriptionComplete)
       .catch((error) => {
@@ -403,12 +465,12 @@ function createSubscription({ customerId, paymentMethodId, priceId }) {
   );
 }
 
-function retryInvoiceWithNewPaymentMethod({
+function retryInvoiceWithNewPaymentMethod(
   customerId,
   paymentMethodId,
   invoiceId,
-  priceId,
-}) {
+  priceId
+) {
   return (
     fetch('/retry-invoice', {
       method: 'post',
@@ -447,7 +509,7 @@ function retryInvoiceWithNewPaymentMethod({
       // Some payment methods require a customer to be on session
       // to complete the payment process. Check the status of the
       // payment intent to handle these actions.
-      .then(handleCustomerActionRequired)
+      .then(handlePaymentThatRequiresCustomerAction)
       // No more actions required. Provision your service for the user.
       .then(onSubscriptionComplete)
       .catch((error) => {
@@ -458,7 +520,12 @@ function retryInvoiceWithNewPaymentMethod({
   );
 }
 
-function retrieveUpcomingInvoice(customerId, subscriptionId, newPriceId) {
+function retrieveUpcomingInvoice(
+  customerId,
+  subscriptionId,
+  newPriceId,
+  quantity
+) {
   return fetch('/retrieve-upcoming-invoice', {
     method: 'post',
     headers: {
@@ -468,6 +535,7 @@ function retrieveUpcomingInvoice(customerId, subscriptionId, newPriceId) {
       customerId: customerId,
       subscriptionId: subscriptionId,
       newPriceId: newPriceId,
+      quantity: quantity,
     }),
   })
     .then((response) => {
@@ -479,7 +547,7 @@ function retrieveUpcomingInvoice(customerId, subscriptionId, newPriceId) {
 }
 
 function cancelSubscription() {
-  changeLoadingStatePrices(true);
+  changeLoadingStateprices(true);
   const params = new URLSearchParams(document.location.search.substring(1));
   const subscriptionId = params.get('subscriptionId');
 
@@ -500,7 +568,7 @@ function cancelSubscription() {
     });
 }
 
-function updateSubscription(priceId, subscriptionId) {
+function updateSubscription(priceId, subscriptionId, quantity) {
   return fetch('/update-subscription', {
     method: 'post',
     headers: {
@@ -509,6 +577,7 @@ function updateSubscription(priceId, subscriptionId) {
     body: JSON.stringify({
       subscriptionId: subscriptionId,
       newPriceId: priceId,
+      quantity: quantity,
     }),
   })
     .then((response) => {
@@ -519,14 +588,14 @@ function updateSubscription(priceId, subscriptionId) {
     });
 }
 
-function retrieveCustomerPaymentMethod(paymentMethodId) {
-  return fetch('/retrieve-customer-payment-method', {
+function getSubscriptionInformation(subscriptionId) {
+  return fetch('/retrieve-subscription-information', {
     method: 'post',
     headers: {
       'Content-type': 'application/json',
     },
     body: JSON.stringify({
-      paymentMethodId: paymentMethodId,
+      subscriptionId: subscriptionId,
     }),
   })
     .then((response) => {
@@ -535,6 +604,10 @@ function retrieveCustomerPaymentMethod(paymentMethodId) {
     .then((response) => {
       return response;
     });
+}
+
+function initPricingPage() {
+  addQuantityListeners();
 }
 
 function getConfig() {
@@ -593,25 +666,51 @@ function getDateStringFromUnixTimestamp(date) {
 }
 
 // For demo purpose only
-function getCustomersPaymentMethod() {
+// Populates data on the account.html page.
+function showSubscriptionInformation() {
   let params = new URLSearchParams(document.location.search.substring(1));
 
-  let paymentMethodId = params.get('paymentMethodId');
-  if (paymentMethodId) {
-    retrieveCustomerPaymentMethod(paymentMethodId).then(function (response) {
+  let subscriptionId = params.get('subscriptionId');
+  if (subscriptionId) {
+    getSubscriptionInformation(subscriptionId).then(function (response) {
+      latestInvoice = response.latest_invoice;
+      upcomingInvoice = response.upcoming_invoice;
+      productDescription = response.product_description;
+      currentPrice = response.current_price;
+      currentQuantity = response.current_quantity;
+
+      document.getElementById(
+        'subscription-details'
+      ).innerHTML = `You are subscribed to <b>${currentQuantity}</b> seat(s) on the <b>${productDescription}</b> plan.<br/>`;
+
+      description = `Your last payment was <b>${getFormattedAmount(
+        latestInvoice.amount_paid
+      )}</b>.`;
+      if (latestInvoice.description) {
+        description += `Details: ${latestInvoice.description}`;
+      }
+
+      document.getElementById('last-payment-summary').innerHTML = description;
+      document.getElementById(
+        'next-payment-summary'
+      ).innerHTML = `Your next payment of <b>${getFormattedAmount(
+        upcomingInvoice.amount_due
+      )} </b> will be due <b>${getDateStringFromUnixTimestamp(
+        upcomingInvoice.next_payment_attempt
+      )} </b>`;
+
       document.getElementById('credit-card-last-four').innerText =
         capitalizeFirstLetter(response.card.brand) +
         ' •••• ' +
         response.card.last4;
 
-      document.getElementById(
-        'subscribed-price'
-      ).innerText = capitalizeFirstLetter(params.get('priceId'));
+      accountInfo.subscriptionId = subscriptionId;
+      accountInfo.priceId = currentPrice;
+      accountInfo.quantity = currentQuantity;
+      accountInfo.customerId = latestInvoice.customer;
     });
   }
 }
-
-getCustomersPaymentMethod();
 
 // Shows the cancellation response
 function subscriptionCancelled() {
@@ -619,7 +718,7 @@ function subscriptionCancelled() {
   document.querySelector('#subscription-settings').classList.add('hidden');
 }
 
-/* Shows a success / error message when the payment is complete */
+/* Redirects the to the account page.  */
 function onSubscriptionSampleDemoComplete({
   priceId: priceId,
   subscription: subscription,
@@ -631,30 +730,17 @@ function onSubscriptionSampleDemoComplete({
   let customerId;
   if (subscription) {
     subscriptionId = subscription.id;
-    currentPeriodEnd = subscription.current_period_end;
-    if (typeof subscription.customer === 'object') {
-      customerId = subscription.customer.id;
-    } else {
-      customerId = subscription.customer;
-    }
   } else {
-    const params = new URLSearchParams(document.location.search.substring(1));
     subscriptionId = invoice.subscription;
-    currentPeriodEnd = params.get('currentPeriodEnd');
-    customerId = invoice.customer;
   }
 
   window.location.href =
-    '/account.html?subscriptionId=' +
-    subscriptionId +
-    '&priceId=' +
-    priceId +
-    '&currentPeriodEnd=' +
-    currentPeriodEnd +
-    '&customerId=' +
-    customerId +
-    '&paymentMethodId=' +
-    paymentMethodId;
+    '/account.html?subscriptionId=' + subscriptionId + '&priceId=' + priceId;
+}
+
+function initAccountPage() {
+  showSubscriptionInformation();
+  addQuantityListeners();
 }
 
 function demoChangePrice() {
@@ -667,28 +753,23 @@ function demoChangePrice() {
   const params = new URLSearchParams(document.location.search.substring(1));
   const priceId = params.get('priceId').toLowerCase();
 
-  // Show the change price screen
   document.querySelector('#prices-form').classList.remove('hidden');
-  document
-    .querySelector('#' + priceId.toLowerCase())
-    .classList.add('border-pasha');
+  containerDiv = document.querySelector('#' + priceId.toLowerCase());
+  containerDiv.classList.add('border-pasha');
 
-  let elements = document.querySelectorAll(
+  let elements = containerDiv.querySelectorAll(
     '#submit-' + priceId + '-button-text'
   );
   for (let i = 0; i < elements.length; i++) {
-    elements[0].childNodes[3].innerText = 'Current';
+    elements[0].childNodes[3].innerText = 'Update Seats';
   }
-  if (priceId === 'premium') {
-    document.getElementById('submit-premium').disabled = true;
-    document.getElementById('submit-basic').disabled = false;
-  } else {
-    document.getElementById('submit-premium').disabled = false;
-    document.getElementById('submit-basic').disabled = true;
-  }
+
+  quantityInput = containerDiv.getElementsByClassName('quantity-input')[0];
+  quantityInput.value = accountInfo.quantity;
 }
 
 // Changes the price selected
+//FIXME: I'm not seeing any update occurring here, or even the style referenced.  Can we remove this?
 function changePriceSelection(priceId) {
   document.querySelector('#basic').classList.remove('border-pasha');
   document.querySelector('#premium').classList.remove('border-pasha');
@@ -711,23 +792,25 @@ function changeLoadingState(isLoading) {
 }
 
 // Show a spinner on subscription submission
-function changeLoadingStatePrices(isLoading) {
-  console.log(isLoading);
+function changeLoadingStateprices(isLoading) {
   if (isLoading) {
-    document.querySelector('#button-text').classList.add('hidden');
-    document.querySelector('#loading').classList.remove('hidden');
-
-    document.querySelector('#submit-basic').classList.add('invisible');
-    document.querySelector('#submit-premium').classList.add('invisible');
-    if (document.getElementById('confirm-price-change-cancel')) {
+    //document.querySelector('#button-text').classList.add('hidden');
+    //document.querySelector('#loading').classList.remove('hidden');
+    //document.querySelector('#submit-basic').classList.add('invisible');
+    //document.querySelector('#submit-premium').classList.add('invisible');
+    /*if (document.getElementById('confirm-price-change-cancel')) {
       document
         .getElementById('confirm-price-change-cancel')
         .classList.add('invisible');
     }
+    */
   } else {
-    document.querySelector('#button-text').classList.remove('hidden');
-    document.querySelector('#loading').classList.add('hidden');
-
+    /*let buttons = document.querySelectorAll('#button-text');
+    let loading = document.querySelectorAll('#loading');
+    for (let i = 0; i < buttons.length; i++) {
+      buttons[i].classList.remove('hidden');
+      loading[i].classList.remove('loading');
+    }
     document.querySelector('#submit-basic').classList.remove('invisible');
     document.querySelector('#submit-premium').classList.remove('invisible');
     if (document.getElementById('confirm-price-change-cancel')) {
@@ -738,6 +821,7 @@ function changeLoadingStatePrices(isLoading) {
         .getElementById('confirm-price-change-submit')
         .classList.remove('invisible');
     }
+    */
   }
 }
 
@@ -748,4 +832,75 @@ function clearCache() {
 function resetDemo() {
   clearCache();
   window.location.href = '/';
+}
+
+//Constants used for quantity setters
+var MIN_SUBS = 1;
+var MAX_SUBS = 100;
+
+function updateQuantity(evt) {
+  if (evt && evt.type === 'keypress' && evt.keyCode !== 13) {
+    return;
+  }
+
+  button = evt.target;
+  containingDiv = button.parentElement;
+  var inputEl = containingDiv.getElementsByTagName('input')[0];
+  var isAdding = button.classList.contains('increment-add');
+  var currentQuantity = parseInt(inputEl.value);
+
+  Array.from(containingDiv.getElementsByTagName('button')).forEach(
+    (element) => {
+      element.disabled = false;
+    }
+  );
+
+  // Calculate new quantity
+
+  var quantity = evt
+    ? isAdding
+      ? currentQuantity + 1
+      : currentQuantity - 1
+    : currentQuantity;
+  // Update number input with new value.
+  inputEl.value = quantity;
+
+  // Disable the button if the customers hits the max or min
+  if (quantity === MIN_SUBS) {
+    containingDiv.getElementsByClassName(
+      'increment-subtract'
+    )[0].disabled = true;
+  }
+  if (quantity === MAX_SUBS) {
+    containingDiv.getElementsByClassName('increment-add')[0].disabled = true;
+  }
+}
+
+function addQuantityListeners() {
+  Array.from(document.getElementsByClassName('quantity-input')).forEach(
+    (element) => {
+      element.addEventListener('change', function (evt) {
+        // Ensure customers only buy between 1 and 10 photos
+        if (evt.target.value < MIN_SUBS) {
+          evt.target.value = MIN_SUBS;
+        }
+        if (evt.target.value > MAX_SUBS) {
+          evt.target.value = MAX_SUBS;
+        }
+      });
+    }
+  );
+
+  /* Attach method */
+  Array.from(document.getElementsByClassName('increment-btn')).forEach(
+    (element) => {
+      element.addEventListener('click', updateQuantity);
+    }
+  );
+
+  Array.from(document.getElementsByClassName('plan-select')).forEach(
+    (element) => {
+      element.addEventListener('click', goToPaymentPage);
+    }
+  );
 }

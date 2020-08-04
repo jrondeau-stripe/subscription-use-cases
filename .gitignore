@@ -1,6 +1,12 @@
 .env
 .DS_Store
 .vscode
+.byebug_history
+
+**/Debug/**
+**/project-cache/**
+**/.vs/**
+**/obj/**
 
 # Dependencies
 node_modules
@@ -31,6 +37,10 @@ target/
 # Typescript
 dist
 
+# React
+build
+
 # docs build files
 _site
 .jekyll-cache
+

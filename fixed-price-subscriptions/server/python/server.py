@@ -48,14 +48,8 @@ def create_customer():
         # At this point, associate the ID of the Customer object with your
         # own internal representation of a customer, if you have one.
 
-        # Create a SetupIntent to set up our payment methods recurring usage
-        setup_intent = stripe.SetupIntent.create(
-            payment_method_types=['card'],
-            customer=customer.id
-        )
         return jsonify(
             customer=customer,
-            setupIntent=setup_intent
         )
     except Exception as e:
         return jsonify(error=str(e)), 403
@@ -91,6 +85,7 @@ def createSubscription():
         return jsonify(subscription)
     except Exception as e:
         return jsonify(error={'message': str(e)}), 200
+
 
 @app.route('/retry-invoice', methods=['POST'])
 def retrySubscription():
@@ -213,7 +208,7 @@ def webhook_received():
 
     data_object = data['object']
 
-    if event_type == 'invoice.payment_succeeded':
+    if event_type == 'invoice.paid':
         # Used to provision services after the trial has ended.
         # The status of the invoice will show up as paid. Store the status in your
         # database to reference when a user accesses your service to avoid hitting rate

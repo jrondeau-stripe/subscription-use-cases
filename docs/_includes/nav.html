@@ -1,0 +1,22 @@
+<!-- If new pages are added, TOC can be modified per version -->
+{% assign stripped_version = page.version | replace: ".", "" %}
+{% if site.data[stripped_version] %}
+  {% assign toc=site.data[stripped_version].toc %}
+{% else %}
+  {% assign toc=site.data.default.toc %}
+{% endif %}
+
+{% for item in toc %}
+<h3>{{ item.title }}</h3>
+<ul>
+  {% for entry in item.subfolderitems %}
+  <li>
+    {% if entry.github %}
+      <a href="{{ entry.url | prepend: page.gh }}" >{{ entry.page }}</a>
+    {% else %}
+      <a href="{{ entry.url | prepend: page.version | prepend: "/" | relative_url }}">{{ entry.page }}</a>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% endfor %}

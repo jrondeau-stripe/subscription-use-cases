@@ -80,6 +80,7 @@ namespace dotnet.Controllers
                 },
             };
             subscriptionOptions.AddExpand("latest_invoice.payment_intent");
+            subscriptionOptions.AddExpand("pending_setup_intent");
             var subscriptionService = new SubscriptionService();
             try
             {
@@ -211,14 +212,7 @@ namespace dotnet.Controllers
                 return BadRequest();
             }
 
-            if (stripeEvent.Type == "invoice.payment_succeeded")
-            {
-                // Used to provision services after the trial has ended.
-                // The status of the invoice will show up as paid. Store the status in your
-                // database to reference when a user accesses your service to avoid hitting rate
-                // limits.
-            }
-            if (stripeEvent.Type == "invoice.payment_succeeded")
+            if (stripeEvent.Type == "invoice.paid")
             {
                 // Used to provision services after the trial has ended.
                 // The status of the invoice will show up as paid. Store the status in your
