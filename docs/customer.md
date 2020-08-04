@@ -1,0 +1,6 @@
+---
+
+---
+
+# Create the customer object
+
