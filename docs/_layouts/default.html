@@ -16,25 +16,9 @@
   <body>
       <header class="sticky-header">
         <a href="{{ page.version | relative_url }}">
-          <img src="{{'/assets/img/stripe-logo.png' | relative_url }}" alt="">
-          <h1>Heptio <span>Ark</span></h1>
+          <img src="{{'/assets/img/stripe-logo-white.png' | relative_url }}" alt="">
+          <h1>Subscription use cases</h1>
         </a>
-
-        <span class="version-selector">
-            <a href="#">
-              <span>{{page.version}}</span><i class="fa fa-caret-down" aria-hidden="true"></i>
-            </a>
-            <ul>
-            {% for version in site.versions %}
-              {% assign original_version = page.version | prepend: '/' | append: '/' %}
-              {% assign new_version = version | prepend: '/' | append: '/' %}
-              {% if version == site.latest %}
-                {% assign latest_url = page.url | replace: original_version, new_version | relative_url %}
-              {% endif %}
-              <li><a href="{{ page.url | replace: original_version, new_version | relative_url }}">{{ version }}</a></li>
-            {% endfor %}
-          </ul>
-        </span>
 
         <ul>
           <li><a href="#"><img src="{{'/assets/img/icon--github.svg' | relative_url }}" alt="github"></a></li>
@@ -46,17 +30,6 @@
         {% include nav.html %}
       </nav>
       <section>
-
-      {% if page.version != site.latest %}
-        <div class="version-warning">
-          <p>
-          <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
-          Documentation for version {{ page.version }} is no longer actively maintained.
-          The version you are currently viewing is a static snapshot.
-          For up-to-date documentation, see the <a href="{{latest_url}}">latest version</a>.
-          </p>
-        </div>
-      {% endif %}
 
       {{ content }}
 

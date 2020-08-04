@@ -1,35 +1,5 @@
-baseurl: /ark
-latest: "v0.6.0"
-exclude:
-  - gen.sh
+baseurl: /subscription-use-cases
 
 plugins:
   - jekyll-redirect-from
-
-versions:
-  - "v0.6.0"
-  - "v0.5.0"
-  - "v0.4.0"
-  - "v0.3.0"
-
-defaults:
-  - scope:
-      path: "v0.6.0"
-    values:
-      version: "v0.6.0"
-      gh: https://github.com/heptio/ark/tree/master
-  - scope:
-      path: "v0.5.0"
-    values:
-      version: "v0.5.0"
-      gh: https://github.com/heptio/ark/tree/v0.5.0
-  - scope:
-      path: "v0.4.0"
-    values:
-      version: "v0.4.0"
-      gh: https://github.com/heptio/ark/tree/v0.4.0
-  - scope:
-      path: "v0.3.0"
-    values:
-      version: "v0.3.0"
-      gh: https://github.com/heptio/ark/tree/v0.3.0
+  - jekyll-relative-links

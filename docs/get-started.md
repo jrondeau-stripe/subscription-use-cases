@@ -1,24 +1,21 @@
 # Get started
 
-Currently the samples for the different use cases are placed in separate directories, so be aware that when you clone the repo you're getting all of them. Make sure to work from the directory that contains the code for your use case. For details, see [how to model your subscription business](/model). TODO CHECK LINK SYNTAX BC I'VE FORGOTTEN EVERYTHING FROM THE TIME BEFORE PAYSERVER
+Currently the samples for the different use cases are placed in separate directories, so be aware that when you clone the repo you're getting all of them. Make sure to work from the directory that contains the code for your use case.
 
 Each sample includes server implementations in all the languages Stripe provides libraries for.
 
 ## Prerequisites
 
+TODO add links
+
 - A Stripe account
 - Your API keys
-- Price IDs
+- The Stripe client library for the language you want to work in 
+- The Stripe CLI (optional but recommended)
 
-## Clone the repo and configure your environment
+## Clone the repository and configure your environment with the CLI
 
-The Stripe CLI is the fastest way to clone and configure a sample to run locally. It also provides functionality for locally testing webhooks and your Stripe integration.
-
-Prerequisite: A Stripe account and your API keys
-
-### Clone and configure the sample with the CLI
-
-Prerequisite: [CLI installed](https://github.com/stripe/stripe-cli#installation) and [paired with your Stripe account](https://stripe.com/docs/stripe-cli#login-account)
+The Stripe CLI is the fastest way to clone and configure a sample to run locally. It also provides functionality for locally testing webhooks and the rest of your Stripe integration.
 
 In your terminal shell, run the Stripe CLI command to clone the sample:
 
@@ -26,20 +23,20 @@ In your terminal shell, run the Stripe CLI command to clone the sample:
 stripe samples create subscription-use-cases
 ```
 
-The CLI will walk you through picking your integration type, server and client languages, and configuring your `.env` config file with your Stripe API keys.
+You're asked to choose your integration type and server and client languages, and provide your Stripe API keys to include in your `.env` config file.
 
-### Clone and configure manually
+## Clone and configure manually
 
-If you do not want to use the Stripe CLI, you can manually clone and configure the sample:
+Or you can manually clone and configure the sample:
 
 ```
 git clone git@github.com:stripe-samples/subscription-use-cases.git
 ```
 
-Copy the `.env.example` file into a file named `.env` in the folder of the server you want to use. For example:
+Copy `.env.example` to a file named `.env` in the folder of the server you want to use. For example:
 
 ```
-cp .env.example server/node/.env
+cp .env.example <use_case_directory>/server/node/.env
 ```
 Add your API keys:
 
@@ -50,33 +47,31 @@ STRIPE_SECRET_KEY=<replace-with-your-secret-key>
 
 `STATIC_DIR` tells the server where the client files are located and does not need to be modified unless you move the server files.
 
-**2. Create Products and Plans on Stripe**
+## Model your business with Products and Prices
 
-This sample requires a [Price](https://stripe.com/docs/api/prices) ID to create the subscription. Products and Plans are objects on Stripe that you use to model a subscription.
+You also need to add Price IDs to your `.env` file. Prices are a core object of the Stripe API, but you typically create them only when your business needs them. TODO figure out better way to explain simply why you'd put them in a .env file instead of calling Stripe from your server.  
 
-You can create Products and Prices [in the Dashboard](https://dashboard.stripe.com/products) or with the [API](https://stripe.com/docs/api/prices/create). Create a Price to run this sample and add it to your `.env`.
+Prices represent your business model, together with their parent object Products. To create the appropriate Price IDs, see [how to model your business](model.md).
 
-**3. Follow the server instructions on how to run:**
+## Run the server
 
 Pick the server language you want and follow the instructions in the server folder README on how to run.
 
 ```
-cd server/node # there's a README in this folder with instructions
+cd <use_case_directory>/server/node # there's a README in this folder with instructions
 npm install
 npm start
 ```
 
-**4. [Optional] Run a webhook locally:**
+## [Optional] Set up a local webhook endpoint
 
-You can use the Stripe CLI to forward webhook events to your server running locally.
-
-If you haven't already, [install the CLI](https://stripe.com/docs/stripe-cli) and [link your Stripe account](https://stripe.com/docs/stripe-cli#link-account).
+You can use the Stripe CLI to forward webhook events to your local server.
 
 ```
 stripe listen --forward-to localhost:4242/webhook
 ```
 
-The CLI will print a webhook secret key to the console. Set `STRIPE_WEBHOOK_SECRET` to this value in your .env file.
+The CLI prints a webhook secret key to the console. Set `STRIPE_WEBHOOK_SECRET` to this value in your `.env` file.
 
 You should see events logged in the console where the CLI is running.
 
@@ -86,11 +81,11 @@ When you are ready to create a live webhook endpoint, follow our guide in the do
 
 Q: Why did you pick these frameworks?
 
-A: We chose the most minimal framework to convey the key Stripe calls and concepts you need to understand. These demos are meant as an educational tool that helps you roadmap how to integrate Stripe within your own system independent of the framework.
+A: We chose minimal frameworks to show only the key Stripe calls and concepts you need to understand. You need to do more work to build a complete integration with your app's chosen framework, but the samples should provide models for integration regardless of framework.
 
 Q: Can you show me how to build X?
 
-A: We are always looking for new recipe ideas, please email dev-samples@stripe.com with your suggestion!
+A: We are always looking for new ideas for Stripe samples. Feel free to email dev-samples@stripe.com with your suggestion!
 
 ## Author(s)
 
