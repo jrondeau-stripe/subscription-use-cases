@@ -1,7 +1,4 @@
----
-layout: default
-title: Set up a subscription service
----
+# About the samples
 
 This repository provides sample code for a complete integration with Stripe's Billing APIs to let you collect payments for subscription-based products or services. The samples are organized around the following use cases:
 
